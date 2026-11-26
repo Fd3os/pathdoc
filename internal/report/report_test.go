@@ -37,7 +37,7 @@ func TestTextShowsEverythingTheUserNeeds(t *testing.T) {
 	out := b.String()
 	for _, want := range []string{
 		`C:\Users\محمد\.gradle`, `"محمد" can't be written in code page 1252`,
-		"agent library failed to init: instrument", `GRADLE_USER_HOME=C:\dev\gradle`, "pathdoc fix",
+		"Error opening zip file or JAR manifest missing", "Agent_OnLoad", `GRADLE_USER_HOME=C:\dev\gradle`, "pathdoc fix",
 		"https://bugs.openjdk.org/browse/JDK-4488646", "GRADLE_USER_HOME is not set",
 		"FormatException: Unexpected end of input", "pathdoc here", "Flutter 3.50.0 fixed it",
 		"2 problems", "1 fixed by pathdoc fix", "1 by pathdoc here", "0.07 s",

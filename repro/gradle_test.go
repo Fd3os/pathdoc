@@ -65,7 +65,9 @@ func TestRepro_gradle_user_home(t *testing.T) {
 		r := run(t, proj, env, gradlew, "help", "--console=plain")
 		run(t, proj, env, gradlew, "--stop")
 		if f.key == "nonacp" {
-			fail(t, f.name+" home", r, "agent library failed to init: instrument")
+			// Java 17 then says "agent library failed to init: instrument",
+			// Java 21 "agent library failed Agent_OnLoad: instrument".
+			fail(t, f.name+" home", r, "Error opening zip file or JAR manifest missing")
 		} else {
 			pass(t, f.name+" home", r, "BUILD SUCCESSFUL")
 		}

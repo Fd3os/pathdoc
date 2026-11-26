@@ -17,7 +17,8 @@ func TestRepro_python_pipe_encoding(t *testing.T) {
 	py := tool(t, "python")
 	fixed := !rules.Less(py.Version, "3.15")
 	base := lab(t)
-	off := []string{"PYTHONUTF8=0", "PYTHONIOENCODING"}
+	// Unset, not PYTHONUTF8=0: =0 forces the old behaviour even on 3.15.
+	off := []string{"PYTHONUTF8", "PYTHONIOENCODING"}
 	for _, f := range folders {
 		venv := filepath.Join(base, f.name, "venv")
 		if r := run(t, base, off, py.Path, "-m", "venv", venv); r.code != 0 {

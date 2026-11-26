@@ -56,9 +56,9 @@ var Catalog = []Rule{
 		Applies: func(f *facts.Facts, where facts.Location) bool {
 			return installed(f, "flutter") || (installed(f, "java") && (where.Exists || !where.Default))
 		},
-		Symptom:  "agent library failed to init: instrument",
+		Symptom:  "Error opening zip file or JAR manifest missing : ...gradle-instrumentation-agent-....jar",
 		Breaks:   "every Gradle build: gradlew, flutter build apk, Android Studio sync",
-		Advice:   "older Gradle says: Could not find or load main class org.gradle.launcher.daemon.bootstrap.GradleDaemon",
+		Advice:   "then agent library failed to init: instrument (Java 17) or agent library failed Agent_OnLoad: instrument (Java 21); older Gradle says: Could not find or load main class org.gradle.launcher.daemon.bootstrap.GradleDaemon",
 		Fix:      FixEnv,
 		Env:      []EnvSet{{Var: "GRADLE_USER_HOME", Sub: "gradle"}},
 		Repro:    "repro/gradle_test.go",
