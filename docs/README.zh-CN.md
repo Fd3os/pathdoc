@@ -85,9 +85,9 @@ pathdoc undo     撤销 fix 和 here 做过的一切
 `.exe` 没有代码签名。如果 Windows SmartScreen 拦下它，选择**更多信息 → 仍要运行**；或者先校验：每个发布都附有 `SHA256SUMS.txt`（它和发布来自同一处，能发现下载损坏，但发现不了被篡改的发布；要防这个，请自己重建），而且构建是可复现的。在装了 Go 的 Windows 上，下面的命令能逐字节重建发布的文件（如果你的 Go 版本不同，Go 会自己获取 1.26.5）：
 
 ```powershell
-git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc
+git clone --branch v0.1.1 https://github.com/Fd3os/pathdoc; cd pathdoc
 $env:GOTOOLCHAIN = "go1.26.5"; $env:CGO_ENABLED = "0"; $env:GOARCH = "amd64"
-go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.0" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
+go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.1" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
 (Get-FileHash pathdoc-windows-amd64.exe -Algorithm SHA256).Hash
 ```
 

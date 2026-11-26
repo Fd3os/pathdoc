@@ -93,9 +93,9 @@ pathdoc undo     يستعيد كل ما غيّره الأمران fix وhere
 على Windows مع تثبيت Go، تعيد الأوامر التالية بناء الإصدار بالبايتات نفسها (سيقوم Go بتنزيل الإصدار 1.26.5 بنفسه إذا كان إصدارك مختلفا):
 
 ```powershell
-git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc
+git clone --branch v0.1.1 https://github.com/Fd3os/pathdoc; cd pathdoc
 $env:GOTOOLCHAIN = "go1.26.5"; $env:CGO_ENABLED = "0"; $env:GOARCH = "amd64"
-go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.0" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
+go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.1" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
 (Get-FileHash pathdoc-windows-amd64.exe -Algorithm SHA256).Hash
 ```
 

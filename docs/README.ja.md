@@ -85,9 +85,9 @@ pathdoc が見逃しているパスの問題を見つけたら、ツール、バ
 `.exe` にはコード署名がありません。Windows SmartScreen に止められたら **詳細情報 → 実行** を選ぶか、先に確認してください。どのリリースにも `SHA256SUMS.txt` があり（リリースと同じ場所から来るので、壊れたダウンロードは見つけられますが改ざんされたリリースは見つけられません。それには自分で再ビルドしてください）、ビルドは再現可能です。Go の入った Windows なら、次のコマンドでリリースとバイト単位で同じファイルができます（Go のバージョンが違えば、Go が 1.26.5 を自動で取得します）：
 
 ```powershell
-git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc
+git clone --branch v0.1.1 https://github.com/Fd3os/pathdoc; cd pathdoc
 $env:GOTOOLCHAIN = "go1.26.5"; $env:CGO_ENABLED = "0"; $env:GOARCH = "amd64"
-go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.0" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
+go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.1" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
 (Get-FileHash pathdoc-windows-amd64.exe -Algorithm SHA256).Hash
 ```
 

@@ -85,9 +85,9 @@ pathdoc undo     вернуть всё, что изменили fix и here
 `.exe` не подписан. Если Windows SmartScreen его остановит, выберите **Подробнее → Выполнить в любом случае** — или сначала проверьте: в каждом релизе есть `SHA256SUMS.txt` (он из того же релиза, поэтому ловит битую загрузку, но не подменённый релиз — от этого защищает пересборка), а сборка воспроизводима. В Windows с установленным Go эти команды собирают релиз байт в байт (если ваша версия Go другая, Go сам скачает 1.26.5):
 
 ```powershell
-git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc
+git clone --branch v0.1.1 https://github.com/Fd3os/pathdoc; cd pathdoc
 $env:GOTOOLCHAIN = "go1.26.5"; $env:CGO_ENABLED = "0"; $env:GOARCH = "amd64"
-go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.0" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
+go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.1" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
 (Get-FileHash pathdoc-windows-amd64.exe -Algorithm SHA256).Hash
 ```
 

@@ -83,9 +83,9 @@ Found a path bug pathdoc misses? Open an issue with the tool, its version, the e
 The `.exe` is not code-signed. If Windows SmartScreen stops it, choose **More info → Run anyway**, or check it first: every release has `SHA256SUMS.txt` (it comes from the same release, so it catches a broken download, not a tampered release — for that, rebuild it), and the build is reproducible. On Windows with Go installed, this rebuilds the release byte for byte (Go fetches 1.26.5 itself if yours differs):
 
 ```powershell
-git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc
+git clone --branch v0.1.1 https://github.com/Fd3os/pathdoc; cd pathdoc
 $env:GOTOOLCHAIN = "go1.26.5"; $env:CGO_ENABLED = "0"; $env:GOARCH = "amd64"
-go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.0" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
+go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=v0.1.1" -o pathdoc-windows-amd64.exe ./cmd/pathdoc
 (Get-FileHash pathdoc-windows-amd64.exe -Algorithm SHA256).Hash
 ```
 
