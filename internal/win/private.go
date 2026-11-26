@@ -69,3 +69,13 @@ func currentUser() (*windows.SID, error) {
 	}
 	return tu.User.Sid.Copy()
 }
+
+// RemoveEmptyDir removes dir only if it is an empty folder: a file, or a
+// folder with anything in it, is refused (ERROR_DIRECTORY, ERROR_DIR_NOT_EMPTY).
+func RemoveEmptyDir(dir string) error {
+	p, err := windows.UTF16PtrFromString(dir)
+	if err != nil {
+		return err
+	}
+	return windows.RemoveDirectory(p)
+}

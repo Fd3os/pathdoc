@@ -10,6 +10,7 @@ import (
 
 	"github.com/Fd3os/pathdoc/internal/rules"
 	"github.com/Fd3os/pathdoc/internal/win"
+	"golang.org/x/sys/windows"
 )
 
 // EnvStore is where user environment variables live: the registry for
@@ -147,7 +148,7 @@ func Undo(st *State, store EnvStore, force bool, w io.Writer) (skipped int, err 
 			case terr != nil || !samePath(target, c.Target):
 				fmt.Fprintf(w, "left %s alone: it is no longer the junction pathdoc made\n", c.Path)
 			default:
-				if rerr := os.Remove(c.Path); rerr != nil {
+				if rerr := win.RemoveEmptyDir(c.Path); rerr != nil { // removes the junction itself, never a file
 					err = errors.Join(err, rerr)
 					keep = append(keep, c)
 					continue
@@ -155,8 +156,16 @@ func Undo(st *State, store EnvStore, force bool, w io.Writer) (skipped int, err 
 				fmt.Fprintf(w, "removed junction %s\n", c.Path)
 			}
 		case "dir":
-			if rerr := os.Remove(c.Path); rerr != nil && !errors.Is(rerr, os.ErrNotExist) {
+			// RemoveDirectory, not os.Remove: a file now at this path is the
+			// user's, and os.Remove would delete it.
+			switch rerr := win.RemoveEmptyDir(c.Path); {
+			case rerr == nil, errors.Is(rerr, os.ErrNotExist):
+			case errors.Is(rerr, windows.ERROR_DIR_NOT_EMPTY):
 				fmt.Fprintf(w, "kept %s: it is not empty\n", c.Path)
+			case errors.Is(rerr, windows.ERROR_DIRECTORY):
+				fmt.Fprintf(w, "left %s alone: it is no longer a folder pathdoc made\n", c.Path)
+			default:
+				fmt.Fprintf(w, "kept %s: %v\n", c.Path, rerr)
 			}
 		}
 	}

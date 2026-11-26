@@ -196,3 +196,32 @@ func TestFoldersFixMakesArePrivate(t *testing.T) {
 		}
 	}
 }
+
+// undo removes folders it made, never a file: if a file now sits where the
+// folder was, it is the user's.
+func TestUndoNeverDeletesAFileInPlaceOfItsFolder(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "dev")
+	gone := filepath.Join(root, "gone")
+	os.MkdirAll(root, 0o755)
+	os.WriteFile(gone, []byte("the user's"), 0o644)
+	st := &State{Changes: []Change{{Kind: "dir", Path: gone}}}
+	var out bytes.Buffer
+	if _, err := Undo(st, newStore(), false, &out); err != nil {
+		t.Fatal(err)
+	}
+	if b, err := os.ReadFile(gone); err != nil || string(b) != "the user's" {
+		t.Fatalf("undo deleted a file: %v\n%s", err, out.String())
+	}
+	if strings.Contains(out.String(), "not empty") {
+		t.Fatalf("a file is not a full folder; say what happened:\n%s", out.String())
+	}
+}
+
+func TestHereRejectsDotNames(t *testing.T) {
+	_, proj, root := project(t, "متجر")
+	for _, bad := range []string{".", "..", "-x", ".hidden"} {
+		if _, _, err := Here(proj, proj, root, bad, &State{Root: root}); err == nil {
+			t.Errorf("--name %q: want an error", bad)
+		}
+	}
+}

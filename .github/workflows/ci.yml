@@ -27,8 +27,11 @@ jobs:
         shell: pwsh
         run: |
           go build -o pathdoc.exe ./cmd/pathdoc
-          ./pathdoc.exe --json | Out-File -Encoding utf8 scan.json
+          # cmd's redirect keeps pathdoc's bytes as they are; a PowerShell pipe
+          # would re-decode them through the console code page.
+          cmd /c ".\pathdoc.exe --json > scan.json"
           if ($LASTEXITCODE -gt 1) { exit 1 }
-          Get-Content scan.json -Raw | ConvertFrom-Json | Out-Null
+          $strict = New-Object System.Text.UTF8Encoding($false, $true)
+          $strict.GetString([IO.File]::ReadAllBytes("$PWD\scan.json")) | ConvertFrom-Json | Out-Null
           ./pathdoc.exe
           exit 0

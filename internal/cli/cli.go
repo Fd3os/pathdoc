@@ -155,7 +155,9 @@ func here(args []string, env Env) int {
 		return 0
 	}
 	if err != nil {
-		fmt.Fprintln(env.Stderr, "pathdoc here:", err)
+		// Keep what it made before failing (the root, its p folder) so undo
+		// can remove it.
+		fmt.Fprintln(env.Stderr, "pathdoc here:", errors.Join(err, st.Save()))
 		return 2
 	}
 	st.Root = *root

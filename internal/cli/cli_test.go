@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -235,5 +236,28 @@ func TestFixNamesRootWhenItCannotMakeIt(t *testing.T) {
 	code, _, errOut := fixRun(sys, store, "", false, "fix", "--yes", "--root", filepath.Join(blocker, "dev"))
 	if code != 2 || !strings.Contains(errOut, "--root") {
 		t.Fatalf("exit %d, stderr %q", code, errOut)
+	}
+}
+
+// A here that fails after making C:\dev and C:\dev\p must still record them,
+// so undo can take them away.
+func TestHereSavesWhatItMadeWhenItFails(t *testing.T) {
+	base := t.TempDir()
+	proj := filepath.Join(base, "متجر")
+	os.MkdirAll(proj, 0o755)
+	root := filepath.Join(base, "dev")
+	s := factstest.New()
+	s.Cwd = proj
+	s.Files[filepath.Join(proj, "pubspec.yaml")] = ""
+	s.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	saved := fix.CreateJunction
+	fix.CreateJunction = func(link, target string) error { return errors.New("refused") }
+	defer func() { fix.CreateJunction = saved }()
+	if code, _, _ := run(s, "here", "--root", root); code != 2 {
+		t.Fatalf("exit %d, want 2", code)
+	}
+	st, err := fix.LoadState(fix.StatePath(filepath.Join(base, "local")))
+	if err != nil || len(st.Changes) != 2 {
+		t.Fatalf("record after a failed here: %+v %v", st, err)
 	}
 }

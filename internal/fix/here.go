@@ -16,7 +16,10 @@ import (
 // ErrAlreadyASCII: the project needs no junction.
 var ErrAlreadyASCII = errors.New("the project path is plain ASCII")
 
-var nameOK = regexp.MustCompile(`^[a-z0-9._-]+$`)
+var nameOK = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
+
+// CreateJunction is win.CreateJunction; a test swaps it to make here fail.
+var CreateJunction = win.CreateJunction
 
 // Here makes (or reuses) the junction <root>\p\<name> to project and says
 // where to build from: cd keeps cwd's place inside the project. A project of
@@ -50,7 +53,7 @@ func Here(project, cwd, root, name string, st *State) (link, cd string, err erro
 			break // ours already
 		}
 		if _, err := os.Lstat(link); os.IsNotExist(err) {
-			if err := win.CreateJunction(link, project); err != nil {
+			if err := CreateJunction(link, project); err != nil {
 				return "", "", err
 			}
 			st.Changes = append(st.Changes, Change{Kind: "junction", Path: link, Target: project, At: time.Now().UTC()})
