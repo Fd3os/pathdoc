@@ -26,6 +26,7 @@ type System interface {
 type Location struct {
 	Key, Label, Path, EnvVar string
 	Default                  bool // Path is the tool's default because EnvVar is unset
+	Exists                   bool // the folder is there now
 }
 
 // Tool is an installed tool. Version is "" when no file says it.
@@ -93,6 +94,10 @@ func Gather(sys System) *Facts {
 	wg.Wait()
 	if py, ok := f.Tools["python"]; ok {
 		f.Locations["python"] = Location{Key: "python", Label: "Python", Path: filepath.Dir(py.Path)}
+	}
+	for k, l := range f.Locations {
+		l.Exists = sys.Exists(l.Path)
+		f.Locations[k] = l
 	}
 	return f
 }

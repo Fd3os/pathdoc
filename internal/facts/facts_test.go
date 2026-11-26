@@ -14,8 +14,12 @@ func TestGatherDefaultsGradleHome(t *testing.T) {
 		t.Fatalf("gradle-home = %+v, want %+v", got, want)
 	}
 	s.env["GRADLE_USER_HOME"] = `D:\g`
-	if got := Gather(s).Locations["gradle-home"]; got.Path != `D:\g` || got.Default {
+	if got := Gather(s).Locations["gradle-home"]; got.Path != `D:\g` || got.Default || got.Exists {
 		t.Fatalf("set GRADLE_USER_HOME: got %+v", got)
+	}
+	s.dirs[`D:\g`] = true
+	if got := Gather(s).Locations["gradle-home"]; !got.Exists {
+		t.Fatalf("existing Gradle home: got %+v", got)
 	}
 }
 
