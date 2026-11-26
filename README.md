@@ -58,6 +58,7 @@ Same three folders, same machine, no failure — so pathdoc says nothing about t
 - `dart compile exe` with the project itself in a non-ASCII folder
 - `PUB_CACHE` on a non-ASCII path
 - `adb keygen` and `emulator -list-avds` with a non-ASCII Android user home
+- **Web projects on Node 24:** `npm install`, `vite build`, `next build`, Tailwind 4, `prisma generate` and sharp, with the project, the npm cache and `TEMP` in each of the three folders. Node handles Unicode paths, so for a web project pathdoc names Node among the tools it checked and stays quiet. A weekly test keeps this true, and also builds a native add-on with node-gyp on the runner's Visual Studio.
 
 Older reports that upstream has since fixed are not rules either: [pip#3463](https://github.com/pypa/pip/issues/3463), [dotnet/sdk#9464](https://github.com/dotnet/sdk/issues/9464), [rustup#5035](https://github.com/rust-lang/rustup/issues/5035), [electron-builder#5134](https://github.com/electron-userland/electron-builder/issues/5134), [gradle#3117](https://github.com/gradle/gradle/issues/3117). .NET has not been tested yet.
 

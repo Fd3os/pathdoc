@@ -44,7 +44,7 @@ func Text(w io.Writer, r Result, color bool) {
 	took := fmt.Sprintf("scanned in %.2f s", r.Elapsed.Seconds())
 	if len(r.Findings) == 0 {
 		if len(r.Tools) == 0 {
-			fmt.Fprintf(w, "%s nothing to check: none of Java, Flutter, Dart or Python is installed · %s\n", paint(green, "ok"), took)
+			fmt.Fprintf(w, "%s nothing to check: none of Java, Flutter, Dart, Python or Node is installed · %s\n", paint(green, "ok"), took)
 			return
 		}
 		fmt.Fprintf(w, "%s no path problems for %s · %s\n", paint(green, "ok"), toolList(r.Tools), took)

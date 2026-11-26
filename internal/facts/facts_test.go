@@ -183,3 +183,15 @@ func TestGatherSeesAndroidManifests(t *testing.T) {
 		}
 	}
 }
+
+// Web developers: Node is a tool pathdoc names, so a clean scan of a web
+// project says what it checked instead of "nothing to check".
+func TestGatherNode(t *testing.T) {
+	s := factstest.New()
+	s.Env["PATH"] = `C:\Program Files\nodejs`
+	s.Files[`C:\Program Files\nodejs\node.exe`] = ""
+	s.Vers[`C:\Program Files\nodejs\node.exe`] = "24.19.0.0"
+	if n := facts.Gather(s).Tools["node"]; n.Name != "Node" || n.Version != "24.19.0" {
+		t.Fatalf("node = %+v", n)
+	}
+}

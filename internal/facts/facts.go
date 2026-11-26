@@ -36,7 +36,7 @@ type Facts struct {
 	CodePage   uint32
 	Represents func(string) bool // bound to CodePage
 	Locations  map[string]Location
-	Tools      map[string]Tool // "java", "flutter", "dart", "python"
+	Tools      map[string]Tool // "java", "flutter", "dart", "python", "node"
 	Project    string          // nearest folder with a marker, "" if none
 	Markers    map[string]bool
 }
@@ -78,7 +78,7 @@ func Gather(sys System) *Facts {
 	}
 
 	finders := map[string]func(System) (Tool, bool){
-		"java": findJava, "flutter": findFlutter, "dart": findDart, "python": findPython,
+		"java": findJava, "flutter": findFlutter, "dart": findDart, "python": findPython, "node": findNode,
 	}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -235,4 +235,16 @@ func firstParts(v string, n int) string {
 		parts = parts[:n]
 	}
 	return strings.Join(parts, ".")
+}
+
+// findNode: web toolchains run on Node. No rule fires for them (the lab
+// found npm, Vite, Next.js, Tailwind, Prisma and sharp fine on non-ASCII
+// paths), but naming Node lets a clean scan say what it checked.
+func findNode(sys System) (Tool, bool) {
+	for _, p := range lookAll(sys, "node") {
+		if v, err := sys.FileVersion(p); err == nil {
+			return Tool{Name: "Node", Path: p, Version: firstParts(v, 3)}, true
+		}
+	}
+	return Tool{}, false
 }
