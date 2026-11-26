@@ -1,0 +1,46 @@
+name: install
+
+# The README's one-liner, run for real on a clean Windows runner in Windows
+# PowerShell 5.1 (what most people have) and in PowerShell 7, after every
+# release and on demand.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - name: install with the one-liner
+        run: irm https://raw.githubusercontent.com/Fd3os/pathdoc/main/install.ps1 | iex
+      - name: pathdoc is on the user Path and runs
+        run: |
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\pathdoc'
+          $userPath = (Get-Item 'HKCU:\Environment').GetValue('Path', '', 'DoNotExpandEnvironmentNames')
+          if (($userPath -split ';') -notcontains $dir) { throw "not on the user Path: $userPath" }
+          $kind = (Get-Item 'HKCU:\Environment').GetValueKind('Path')
+          if ($kind -ne 'ExpandString') { throw "user Path became $kind" }
+          $v = & (Join-Path $dir 'pathdoc.exe') --version
+          $v
+          if ($v -notmatch '^pathdoc v\d') { throw "unexpected version: $v" }
+          & (Join-Path $dir 'pathdoc.exe')
+          if ($LASTEXITCODE -gt 1) { throw "scan failed: $LASTEXITCODE" }
+          exit 0
+      - name: installing again keeps one Path entry
+        run: |
+          irm https://raw.githubusercontent.com/Fd3os/pathdoc/main/install.ps1 | iex
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\pathdoc'
+          $userPath = (Get-Item 'HKCU:\Environment').GetValue('Path', '', 'DoNotExpandEnvironmentNames')
+          $n = @($userPath -split ';' | Where-Object { $_ -eq $dir }).Count
+          if ($n -ne 1) { throw "Path has $n entries for pathdoc" }
