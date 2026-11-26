@@ -3,10 +3,13 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Fd3os/pathdoc/internal/facts/factstest"
+	"github.com/Fd3os/pathdoc/internal/fix"
 )
 
 func run(sys *factstest.Fake, args ...string) (code int, stdout, stderr string) {
@@ -79,5 +82,42 @@ func TestVersionAndHelp(t *testing.T) {
 	}
 	if code, out, _ := run(factstest.New(), "help"); code != 0 || !strings.Contains(out, "pathdoc fix") {
 		t.Errorf("help: %d %q", code, out)
+	}
+}
+
+func TestHereCommand(t *testing.T) {
+	base := t.TempDir()
+	proj := filepath.Join(base, "متجر")
+	os.MkdirAll(filepath.Join(proj, "android"), 0o755)
+	root := filepath.Join(base, "dev")
+	link := filepath.Join(root, "p", "mtjr")
+	t.Cleanup(func() { os.Remove(link) })
+	s := factstest.New()
+	s.Cwd = filepath.Join(proj, "android")
+	s.Files[filepath.Join(proj, "pubspec.yaml")] = ""
+	s.Files[filepath.Join(proj, "package.json")] = ""
+	s.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	code, out, errOut := run(s, "here", "--root", root)
+	if code != 0 {
+		t.Fatalf("exit %d\n%s%s", code, out, errOut)
+	}
+	sub := filepath.Join(link, "android")
+	for _, want := range []string{`Set-Location "` + sub + `"`, `cd /d "` + sub + `"`, "Git Bash", "npm"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("here output lacks %q\n%s", want, out)
+		}
+	}
+	if _, err := os.Stat(fix.StatePath(filepath.Join(base, "local"))); err != nil {
+		t.Errorf("no undo record: %v", err)
+	}
+
+	plain := factstest.New()
+	plain.Cwd = filepath.Join(base, "plain")
+	plain.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	if code, out, _ := run(plain, "here", "--root", root); code != 0 || !strings.Contains(out, "plain ASCII") {
+		t.Errorf("ASCII project: exit %d\n%s", code, out)
+	}
+	if code, _, errOut := run(s, "here", "--root", `C:\my dev`); code != 2 || !strings.Contains(errOut, "--root") {
+		t.Errorf("bad root: exit %d, %q", code, errOut)
 	}
 }
