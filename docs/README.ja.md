@@ -1,6 +1,6 @@
 # pathdoc
 
-**Windows でフォルダー名が英語でないだけで、ビルドが壊れます。pathdoc はどこで壊れるのか、どのツールがなぜ壊れるのかを示し、修正します。変更はすべて元に戻せます。**
+**Windows でフォルダー名が英語でないだけで、ビルドが壊れます。pathdoc はどこで壊れるのか、どのツールがなぜ壊れるのかを示し、解決します：ユーザー設定を代わりに変えるか、ビルドできる ASCII パスを用意します。変更はすべて元に戻せます。**
 
 <p align="center">
   <img src="demo.gif" width="800" alt="D:\مشاريع\متجر で flutter build apk が失敗し、pathdoc が原因を示し、pathdoc here が C:\dev\p\mtjr を作り、そこから同じビルドが成功する">
@@ -8,7 +8,7 @@
 
 <p align="center"><a href="../README.md">English</a> · <a href="README.zh-CN.md">中文</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · 日本語</p>
 
-Java、Gradle、Android Gradle Plugin、Dart、Python は、`C:\Users\山田`、`C:\Users\محمد`、`C:\Users\Иван`、`D:\Projects\Café` のようなパスで今も壊れます。エラーは「パス」とは決して言いません。`Could not find or load main class`、`Unable to write file`、`FormatException`、`UnicodeEncodeError` と言うだけです。GitHub にはパス中の非 ASCII 文字に関する issue が 11,000 件以上あります。
+Java、Gradle、Android Gradle Plugin、Dart、Python は、`C:\Users\山田`、`C:\Users\محمد`、`C:\Users\Иван`、`D:\Projects\Café` のようなパスで今も壊れます。エラーは「パス」とは決して言いません。`Could not find or load main class`、`Unable to write file`、`FormatException`、`UnicodeEncodeError` と言うだけです。GitHub で “non-ASCII characters in path” を検索すると 11,000 件以上の issue が見つかります。
 
 pathdoc はインストール不要の `.exe` ひとつです。コードページ、環境変数、各ツールのバージョン（ツールを実行せず、ファイルから読み取ります）を読み、**あなたのマシンで**実際に壊れるものだけを一瞬で報告します。どのパスか、どのツールが壊れるか、表示される正確なエラー、そしてその証拠です。
 
@@ -60,6 +60,7 @@ pathdoc undo     fix と here が変えたものをすべて元に戻す
 - プロジェクト自体が非 ASCII のフォルダーにあるときの `dart compile exe`
 - 非 ASCII のパスにある `PUB_CACHE`
 - Android のユーザーホームが非 ASCII のときの `adb keygen` と `emulator -list-avds`
+- **Node 24 の Web プロジェクト：** `npm install`、`vite build`、`next build`、Tailwind 4、`prisma generate`、sharp。プロジェクト、npm キャッシュ、`TEMP` をそれぞれ 3 つのフォルダーに置き、すべて成功しました。Node は Unicode パスを正しく扱うので、Web プロジェクトでは pathdoc は検査したツールとして Node を挙げ、何も警告しません。毎週のテストがこれを確かめ続け、runner の Visual Studio で node-gyp のネイティブモジュールもビルドします。
 
 上流ですでに修正された古い報告もルールにしていません：[pip#3463](https://github.com/pypa/pip/issues/3463)、[dotnet/sdk#9464](https://github.com/dotnet/sdk/issues/9464)、[rustup#5035](https://github.com/rust-lang/rustup/issues/5035)、[electron-builder#5134](https://github.com/electron-userland/electron-builder/issues/5134)、[gradle#3117](https://github.com/gradle/gradle/issues/3117)。.NET はまだ検査していません。
 
@@ -69,7 +70,7 @@ pathdoc undo     fix と here が変えたものをすべて元に戻す
 - あなたのファイルに触れること、移動すること、削除すること。
 - ネットワークにつなぐこと。通信もテレメトリーも一切ありません。
 
-`fix` は `C:\dev` の下に新しいフォルダーを作り、**ユーザー**環境変数（`HKCU\Environment`）を設定するだけで、その前に正確な計画を見せます。`here` は `C:\dev\p` の下にジャンクションを一つ作るだけです。すべての変更と、それが置き換えた値は `%LOCALAPPDATA%\pathdoc\state.json` に記録され、`pathdoc undo` で元に戻ります。`fix` の後に自分で値を変えた場合、`undo` はあなたの値を残し、そのことを伝えます。
+`fix` は `C:\dev` の下に新しいフォルダーを作り、**ユーザー**環境変数（`HKCU\Environment`）を設定するだけで、その前に正確な計画を見せます。`here` は `C:\dev\p` の下にジャンクションを一つ作るだけです。すべての変更と、それが置き換えた値は `%LOCALAPPDATA%\pathdoc\state.json` に記録され、`pathdoc undo` で元に戻ります。`fix` の後に自分で値を変えた場合、`undo` はあなたの値を残し、そのことを伝えます。 `fix` が作るフォルダーはあなたのアカウント専用です（同じ PC の他のアカウントは、pathdoc が作った TEMP や Gradle のホームに書き込めません）。これらの変数はユーザー全体に効きます。新しい `TEMP` は起動するすべてのプログラムが使い、`PYTHONUTF8=1` はすべての Python スクリプトを既定で UTF-8 で読み書きさせます（Python 3.15 と同じ）。解決は 2 種類です。`pathdoc fix` はユーザー設定を一度変えれば終わり、`pathdoc here` はプロジェクトに ASCII パスを与え、以後はそのパスからビルドします（Android Studio や VS Code でもそのパスを開きます）。Microsoft Store の Python はまだ検出できません。
 
 `fix` の後、各ツールは新しいフォルダーでキャッシュを作り直すので、次のビルドは一度だけ遅くなります。`here` のジャンクションからのビルドは PowerShell か cmd で行ってください。Git Bash はジャンクションをたどって元のパスに戻ってしまいます。npm と Vite のビルドは元のフォルダーで実行してください。Node もジャンクションを元のパスに解決するためです。
 
@@ -81,7 +82,7 @@ pathdoc が見逃しているパスの問題を見つけたら、ツール、バ
 
 ## 署名なし、チェックサムあり、再現可能
 
-`.exe` にはコード署名がありません。Windows SmartScreen に止められたら **詳細情報 → 実行** を選ぶか、先に確認してください。どのリリースにも `SHA256SUMS.txt` があり、ビルドは再現可能です。Go の入った Windows なら、次のコマンドでリリースとバイト単位で同じファイルができます（Go のバージョンが違えば、Go が 1.26.5 を自動で取得します）：
+`.exe` にはコード署名がありません。Windows SmartScreen に止められたら **詳細情報 → 実行** を選ぶか、先に確認してください。どのリリースにも `SHA256SUMS.txt` があり（リリースと同じ場所から来るので、壊れたダウンロードは見つけられますが改ざんされたリリースは見つけられません。それには自分で再ビルドしてください）、ビルドは再現可能です。Go の入った Windows なら、次のコマンドでリリースとバイト単位で同じファイルができます（Go のバージョンが違えば、Go が 1.26.5 を自動で取得します）：
 
 ```powershell
 git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc

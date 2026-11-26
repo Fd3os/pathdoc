@@ -1,6 +1,6 @@
 # pathdoc
 
-**在 Windows 上，文件夹名不是英文就可能让构建失败。pathdoc 找出会出问题的地方，告诉你是哪个工具、为什么，并帮你修好。每一项改动都能撤销。**
+**在 Windows 上，文件夹名不是英文就可能让构建失败。pathdoc 找出会出问题的地方，告诉你是哪个工具、为什么，并给出解决办法：替你改一项用户设置，或给出一个可以构建的 ASCII 路径。每一项改动都能撤销。**
 
 <p align="center">
   <img src="demo.gif" width="800" alt="在 D:\مشاريع\متجر 中 flutter build apk 失败；pathdoc 指出原因；pathdoc here 创建 C:\dev\p\mtjr；从那里同样的构建成功">
@@ -8,7 +8,7 @@
 
 <p align="center"><a href="../README.md">English</a> · 中文 · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a></p>
 
-Java、Gradle、Android Gradle 插件、Dart 和 Python 遇到 `C:\Users\张伟`、`C:\Users\محمد`、`C:\Users\Иван` 或 `D:\Projects\Café` 这样的路径时，至今仍会出错。报错从不提“路径”，只会说 `Could not find or load main class`、`Unable to write file`、`FormatException`、`UnicodeEncodeError`。GitHub 上关于路径中非 ASCII 字符的 issue 超过 11,000 个。
+Java、Gradle、Android Gradle 插件、Dart 和 Python 遇到 `C:\Users\张伟`、`C:\Users\محمد`、`C:\Users\Иван` 或 `D:\Projects\Café` 这样的路径时，至今仍会出错。报错从不提“路径”，只会说 `Could not find or load main class`、`Unable to write file`、`FormatException`、`UnicodeEncodeError`。在 GitHub 上搜索 “non-ASCII characters in path”，能找到超过 11,000 个 issue。
 
 pathdoc 只是一个 `.exe`，不需要安装任何运行时。它读取你的代码页、环境变量和各个工具的版本（从文件里读，从不运行这些工具），一眨眼就报告在**你这台机器上**真正会出问题的地方：哪个路径、会让哪些工具失败、你会看到的确切报错，以及证据。
 
@@ -60,6 +60,7 @@ pathdoc undo     撤销 fix 和 here 做过的一切
 - 项目本身在非 ASCII 文件夹里时的 `dart compile exe`
 - 位于非 ASCII 路径的 `PUB_CACHE`
 - Android 用户目录为非 ASCII 时的 `adb keygen` 和 `emulator -list-avds`
+- **Node 24 上的网站项目：** `npm install`、`vite build`、`next build`、Tailwind 4、`prisma generate` 和 sharp，项目、npm 缓存和 `TEMP` 分别放在三个文件夹里，全部通过。Node 能正确处理 Unicode 路径，所以对网站项目 pathdoc 会把 Node 列为已检查的工具，不报警。每周的测试会继续验证这一点，并在 runner 的 Visual Studio 上用 node-gyp 编译一个原生模块。
 
 上游已经修好的旧问题也不算规则：[pip#3463](https://github.com/pypa/pip/issues/3463)、[dotnet/sdk#9464](https://github.com/dotnet/sdk/issues/9464)、[rustup#5035](https://github.com/rust-lang/rustup/issues/5035)、[electron-builder#5134](https://github.com/electron-userland/electron-builder/issues/5134)、[gradle#3117](https://github.com/gradle/gradle/issues/3117)。.NET 还没有测试过。
 
@@ -69,7 +70,7 @@ pathdoc undo     撤销 fix 和 here 做过的一切
 - 修改、移动或删除你的任何文件。
 - 联网。没有任何网络请求，也没有遥测。
 
-`fix` 只会在 `C:\dev` 下新建文件夹，并设置**用户级**环境变量（`HKCU\Environment`），而且会先把完整计划给你看。`here` 只会在 `C:\dev\p` 下创建一个目录联接。每一项改动和它替换掉的值都记录在 `%LOCALAPPDATA%\pathdoc\state.json`，`pathdoc undo` 会把它们放回去。如果你在 `fix` 之后自己改过某个值，`undo` 会保留你的值，并告诉你。
+`fix` 只会在 `C:\dev` 下新建文件夹，并设置**用户级**环境变量（`HKCU\Environment`），而且会先把完整计划给你看。`here` 只会在 `C:\dev\p` 下创建一个目录联接。每一项改动和它替换掉的值都记录在 `%LOCALAPPDATA%\pathdoc\state.json`，`pathdoc undo` 会把它们放回去。如果你在 `fix` 之后自己改过某个值，`undo` 会保留你的值，并告诉你。 `fix` 新建的文件夹只属于你的账户（同一台电脑上的其他账户无法往 pathdoc 建的 TEMP 或 Gradle 主目录里写东西）。这些变量对整个用户生效：新的 `TEMP` 会被你启动的所有程序使用，`PYTHONUTF8=1` 会让所有 Python 脚本默认按 UTF-8 读写，和 Python 3.15 一样。解决办法有两种：`pathdoc fix` 改一次用户设置就完事；`pathdoc here` 给项目一个 ASCII 路径，之后要从这个路径构建（在 Android Studio 或 VS Code 里也打开这个路径）。来自 Microsoft Store 的 Python 暂时检测不到。
 
 `fix` 之后，各个工具会在新文件夹里重建缓存，所以下一次构建会慢一次。请在 PowerShell 或 cmd 里从 `here` 建的联接构建：Git Bash 会顺着联接回到真实路径。npm 和 Vite 的构建应该在真实文件夹里运行，因为 Node 同样会把联接解析回真实路径。
 
@@ -81,7 +82,7 @@ pathdoc undo     撤销 fix 和 here 做过的一切
 
 ## 未签名、有校验和、可复现
 
-`.exe` 没有代码签名。如果 Windows SmartScreen 拦下它，选择**更多信息 → 仍要运行**；或者先校验：每个发布都附有 `SHA256SUMS.txt`，而且构建是可复现的。在装了 Go 的 Windows 上，下面的命令能逐字节重建发布的文件（如果你的 Go 版本不同，Go 会自己获取 1.26.5）：
+`.exe` 没有代码签名。如果 Windows SmartScreen 拦下它，选择**更多信息 → 仍要运行**；或者先校验：每个发布都附有 `SHA256SUMS.txt`（它和发布来自同一处，能发现下载损坏，但发现不了被篡改的发布；要防这个，请自己重建），而且构建是可复现的。在装了 Go 的 Windows 上，下面的命令能逐字节重建发布的文件（如果你的 Go 版本不同，Go 会自己获取 1.26.5）：
 
 ```powershell
 git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc
