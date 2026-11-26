@@ -102,7 +102,7 @@ func TestHereCommand(t *testing.T) {
 		t.Fatalf("exit %d\n%s%s", code, out, errOut)
 	}
 	sub := filepath.Join(link, "android")
-	for _, want := range []string{`Set-Location "` + sub + `"`, `cd /d "` + sub + `"`, "Git Bash", "npm"} {
+	for _, want := range []string{`Set-Location -LiteralPath '` + sub + `'`, `cd /d "` + sub + `"`, "Git Bash", "npm"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("here output lacks %q\n%s", want, out)
 		}
@@ -192,5 +192,48 @@ func TestFixWithNothingToDo(t *testing.T) {
 	sys.Env["LOCALAPPDATA"] = t.TempDir()
 	if code, out, _ := fixRun(sys, &memStore{vals: map[string]fix.Value{}}, "", false, "fix"); code != 0 || !strings.Contains(out, "nothing for pathdoc fix") {
 		t.Fatalf("exit %d\n%s", code, out)
+	}
+}
+
+// A folder name with ' $ or [ ] must survive the copy-paste line.
+func TestHereQuotesAnOddSubfolder(t *testing.T) {
+	base := t.TempDir()
+	proj := filepath.Join(base, "متجر")
+	sub := filepath.Join(proj, "it's $x [1]")
+	os.MkdirAll(sub, 0o755)
+	root := filepath.Join(base, "dev")
+	t.Cleanup(func() { os.Remove(filepath.Join(root, "p", "mtjr")) })
+	s := factstest.New()
+	s.Cwd = sub
+	s.Files[filepath.Join(proj, "pubspec.yaml")] = ""
+	s.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	code, out, errOut := run(s, "here", "--root", root)
+	want := `Set-Location -LiteralPath '` + filepath.Join(root, "p", "mtjr", "it''s $x [1]") + `'`
+	if code != 0 || !strings.Contains(out, want) {
+		t.Fatalf("exit %d, want %q in\n%s%s", code, want, out, errOut)
+	}
+}
+
+func TestFixSaysWhatItChangesBeyondTheTool(t *testing.T) {
+	base := t.TempDir()
+	sys := dartWithJoseTemp()
+	sys.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	store := &memStore{vals: map[string]fix.Value{}}
+	_, out, _ := fixRun(sys, store, "n\n", true, "fix", "--root", filepath.Join(base, "dev"))
+	if !strings.Contains(out, "every program you start") {
+		t.Fatalf("fix must say TEMP is user-wide:\n%s", out)
+	}
+}
+
+func TestFixNamesRootWhenItCannotMakeIt(t *testing.T) {
+	base := t.TempDir()
+	blocker := filepath.Join(base, "file")
+	os.WriteFile(blocker, []byte("x"), 0o644)
+	sys := dartWithJoseTemp()
+	sys.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	store := &memStore{vals: map[string]fix.Value{}}
+	code, _, errOut := fixRun(sys, store, "", false, "fix", "--yes", "--root", filepath.Join(blocker, "dev"))
+	if code != 2 || !strings.Contains(errOut, "--root") {
+		t.Fatalf("exit %d, stderr %q", code, errOut)
 	}
 }

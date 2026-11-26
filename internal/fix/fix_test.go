@@ -9,6 +9,7 @@ import (
 
 	"github.com/Fd3os/pathdoc/internal/facts"
 	"github.com/Fd3os/pathdoc/internal/rules"
+	"github.com/Fd3os/pathdoc/internal/win"
 )
 
 type fakeStore struct {
@@ -179,5 +180,19 @@ func TestUndoRemovesADanglingJunction(t *testing.T) {
 	}
 	if len(st.Changes) != 0 {
 		t.Fatalf("changes left: %+v", st.Changes)
+	}
+}
+
+func TestFoldersFixMakesArePrivate(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "dev")
+	store := newStore()
+	steps, _ := Plan([]rules.Finding{finding("gradle-user-home"), finding("dart-temp")}, root, store)
+	if err := Apply(steps, &State{}, store); err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range []string{root, filepath.Join(root, "gradle"), filepath.Join(root, "temp")} {
+		if ok, err := win.IsPrivate(d); err != nil || !ok {
+			t.Errorf("%s: private = %v, %v; other accounts could write into it", d, ok, err)
+		}
 	}
 }

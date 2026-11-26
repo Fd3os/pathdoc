@@ -18,7 +18,9 @@ var Catalog = []Rule{
 		Applies: func(f *facts.Facts, _ facts.Location) bool {
 			// Flutter keeps android\gradlew.bat out of git and writes it on the
 			// first Android build, so the Android settings file counts too.
-			return installed(f, "java") && (f.Markers["gradlew.bat"] || f.Markers["android/gradlew.bat"] ||
+			// Flutter builds with Android Studio's bundled JDK, often with no
+			// JAVA_HOME and no java on PATH: Flutter counts as a JDK here.
+			return (installed(f, "java") || installed(f, "flutter")) && (f.Markers["gradlew.bat"] || f.Markers["android/gradlew.bat"] ||
 				f.Markers["android/settings.gradle"] || f.Markers["android/settings.gradle.kts"])
 		},
 		Symptom:  "Error: Could not find or load main class org.gradle.wrapper.GradleWrapperMain",
@@ -52,7 +54,7 @@ var Catalog = []Rule{
 		Locations: []string{"gradle-home"},
 		Trigger:   NotInCodePage,
 		Applies: func(f *facts.Facts, where facts.Location) bool {
-			return installed(f, "java") && (installed(f, "flutter") || where.Exists || !where.Default)
+			return installed(f, "flutter") || (installed(f, "java") && (where.Exists || !where.Default))
 		},
 		Symptom:  "agent library failed to init: instrument",
 		Breaks:   "every Gradle build: gradlew, flutter build apk, Android Studio sync",

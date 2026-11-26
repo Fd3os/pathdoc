@@ -169,8 +169,10 @@ func here(args []string, env Env) int {
 	}
 	fmt.Fprintf(env.Stdout, "%s -> %s\n\n", link, project)
 	fmt.Fprintln(env.Stdout, "build from it in PowerShell or cmd (Git Bash follows the junction back to the real path):")
-	// Quoted by hand: %q would double every backslash.
-	fmt.Fprintf(env.Stdout, "  PowerShell:  Set-Location \"%s\"\n", cd)
+	// Quoted by hand (%q would double every backslash). PowerShell gets
+	// -LiteralPath in single quotes, so no $, backtick or [ ] in a folder name
+	// expands or matches; a ' is doubled.
+	fmt.Fprintf(env.Stdout, "  PowerShell:  Set-Location -LiteralPath '%s'\n", strings.ReplaceAll(cd, "'", "''"))
 	fmt.Fprintf(env.Stdout, "  cmd:         cd /d \"%s\"\n", cd)
 	if f.Markers["package.json"] {
 		fmt.Fprintln(env.Stdout, "\nnote: run npm and Vite builds from the real folder; Node follows the junction back and the build breaks the other way round")
@@ -228,7 +230,14 @@ func fixCmd(args []string, env Env) int {
 	if len(dirs) > 0 {
 		fmt.Fprintf(env.Stdout, "and create %s\n", strings.Join(dirs, ", "))
 	}
-	fmt.Fprintln(env.Stdout, "Nothing else is touched; pathdoc undo puts it all back.")
+	said := map[string]bool{}
+	for _, s := range steps {
+		if note := userWide[s.Var]; note != "" && !said[note] {
+			said[note] = true
+			fmt.Fprintln(env.Stdout, note)
+		}
+	}
+	fmt.Fprintln(env.Stdout, "The folders are private to your account. Nothing else is touched; pathdoc undo puts it all back.")
 	if !*yes {
 		if !env.Interactive {
 			fmt.Fprintln(env.Stderr, "pathdoc fix: not asking without a console; run pathdoc fix --yes to apply")
@@ -291,4 +300,11 @@ func undo(args []string, env Env) int {
 	}
 	fmt.Fprintln(env.Stdout, "\neverything pathdoc changed is back. Open a new terminal to see it.")
 	return 0
+}
+
+// userWide says what a variable changes beyond the tool that needed it.
+var userWide = map[string]string{
+	"TEMP":       "TEMP and TMP are user-wide: every program you start will use the new temp folder, not only Dart.",
+	"TMP":        "TEMP and TMP are user-wide: every program you start will use the new temp folder, not only Dart.",
+	"PYTHONUTF8": "PYTHONUTF8=1 is user-wide: every Python script reads and writes UTF-8 by default (open() without encoding=), as Python 3.15 does.",
 }

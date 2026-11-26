@@ -1,6 +1,6 @@
 # pathdoc
 
-**Your Windows build breaks because a folder name isn't English. pathdoc finds where, tells you which tool breaks and why, and fixes it. Every change can be undone.**
+**Your Windows build breaks because a folder name isn't English. pathdoc finds where, tells you which tool breaks and why, and cures it: a user setting it changes for you, or an ASCII path to build from. Every change can be undone.**
 
 <p align="center">
   <img src="docs/demo.gif" width="800" alt="flutter build apk fails in D:\مشاريع\متجر with 'Could not find or load main class org.gradle.wrapper.GradleWrapperMain'; pathdoc names the cause; pathdoc here makes C:\dev\p\mtjr; the same build passes from there">
@@ -8,7 +8,7 @@
 
 <p align="center">English · <a href="docs/README.zh-CN.md">中文</a> · <a href="docs/README.ar.md">العربية</a> · <a href="docs/README.ru.md">Русский</a> · <a href="docs/README.ja.md">日本語</a></p>
 
-Java, Gradle, Dart and Python still break on paths like `C:\Users\محمد`, `C:\Users\张伟`, `C:\Users\Иван` or `D:\Projects\Café`. The error never says "path". It says `Could not find or load main class`, `Unable to write file`, `FormatException`, `UnicodeEncodeError` — and GitHub has more than 11,000 issues about non-ASCII characters in paths.
+Java, Gradle, Dart and Python still break on paths like `C:\Users\محمد`, `C:\Users\张伟`, `C:\Users\Иван` or `D:\Projects\Café`. The error never says "path". It says `Could not find or load main class`, `Unable to write file`, `FormatException`, `UnicodeEncodeError` — and a GitHub search for "non-ASCII characters in path" returns more than 11,000 issues.
 
 pathdoc is one `.exe` with nothing to install. It reads your code page, your environment and the versions of your tools (from their files, never by running them), and in a fraction of a second reports only what will break on **your** machine: the path, the tools it breaks, the exact error you will see, and the proof.
 
@@ -37,7 +37,7 @@ pathdoc undo     put back everything fix and here changed
 
 Each rule was reproduced on Windows 10 (code page 1252) in three folders, `plain`, `café` and `ابوي`, and is reproduced again every week on a GitHub Actions Windows runner, failing before its cure and passing after it ([`repro/`](repro), [workflow](.github/workflows/repro.yml)).
 
-Two kinds of trigger. **Not in your code page:** a character your Windows ANSI code page cannot write. Arabic breaks on a Western European system, `café` does not, and Chinese on a Chinese-locale system (code page 936) does not either. **Any non-ASCII:** even `café` breaks.
+Two kinds of trigger. **Not in your code page:** a character your Windows ANSI code page cannot write. Arabic breaks on a Western European system and `café` does not; Chinese on a Chinese-locale system (code page 936) should not either, though that case is not reproduced (the lab and CI run code page 1252). **Any non-ASCII:** even `café` breaks.
 
 | Rule | Breaks when | You see | Cure | Proof |
 |---|---|---|---|---|
@@ -49,7 +49,7 @@ Two kinds of trigger. **Not in your code page:** a character your Windows ANSI c
 | `flutter-analyze` | the Flutter project folder has any non-ASCII letter, Flutter older than 3.50.0 | `flutter analyze`: `FormatException: Unexpected end of input` | `pathdoc here`, or `flutter upgrade` | [flutter#191309](https://github.com/flutter/flutter/issues/191309), [#192079](https://github.com/flutter/flutter/issues/192079), fixed by [#191377](https://github.com/flutter/flutter/pull/191377), [repro](repro/flutter_test.go) |
 | `python-pipe-encoding` | Python's folder or a Python project is not in your code page, Python older than 3.15, output captured by an IDE, CI or a pipe | `UnicodeEncodeError: 'charmap' codec can't encode characters` | `pathdoc fix`: `PYTHONUTF8=1` | [PEP 686](https://peps.python.org/pep-0686/), [pip#11798](https://github.com/pypa/pip/issues/11798), [repro](repro/python_test.go) |
 
-A rule fires only for tools you have installed, and stops firing on the version upstream fixed it in.
+A rule fires only for tools you have installed, and stops firing on the version upstream fixed it in. Two kinds of cure: `pathdoc fix` changes a user setting once and is done; `pathdoc here` gives the project an ASCII path, and you build (and open it in Android Studio or VS Code) from that path from then on. Python from the Microsoft Store is not detected yet.
 
 ### Checked, and fine
 
@@ -67,7 +67,7 @@ Older reports that upstream has since fixed are not rules either: [pip#3463](htt
 - Touch, move or delete any of your files.
 - Go online. No network calls, no telemetry.
 
-`fix` only creates new folders under `C:\dev` and sets **user** environment variables (`HKCU\Environment`), after showing you the exact plan. `here` only creates a junction under `C:\dev\p`. Every change and the value it replaced is recorded in `%LOCALAPPDATA%\pathdoc\state.json`, and `pathdoc undo` puts it back. If you changed a value yourself after `fix`, `undo` leaves yours alone and says so.
+`fix` only creates new folders under `C:\dev` and sets **user** environment variables (`HKCU\Environment`), after showing you the exact plan. The folders it creates are private to your account (other accounts on the PC cannot write into a TEMP or Gradle home pathdoc made). These variables are user-wide: a new `TEMP` is used by every program you start, and `PYTHONUTF8=1` makes every Python script read and write UTF-8 by default, as Python 3.15 does. `here` only creates a junction under `C:\dev\p`. Every change and the value it replaced is recorded in `%LOCALAPPDATA%\pathdoc\state.json`, and `pathdoc undo` puts it back. If you changed a value yourself after `fix`, `undo` leaves yours alone and says so.
 
 After `fix`, tools rebuild their caches in the new folders, so the next build is slower once. Build from a `here` junction in PowerShell or cmd: Git Bash follows the junction back to the real path. npm and Vite builds should run from the real folder, because Node also resolves the junction back.
 
@@ -79,7 +79,7 @@ Found a path bug pathdoc misses? Open an issue with the tool, its version, the e
 
 ## Unsigned, checksummed, reproducible
 
-The `.exe` is not code-signed. If Windows SmartScreen stops it, choose **More info → Run anyway**, or check it first: every release has `SHA256SUMS.txt`, and the build is reproducible. On Windows with Go installed, this rebuilds the release byte for byte (Go fetches 1.26.5 itself if yours differs):
+The `.exe` is not code-signed. If Windows SmartScreen stops it, choose **More info → Run anyway**, or check it first: every release has `SHA256SUMS.txt` (it comes from the same release, so it catches a broken download, not a tampered release — for that, rebuild it), and the build is reproducible. On Windows with Go installed, this rebuilds the release byte for byte (Go fetches 1.26.5 itself if yours differs):
 
 ```powershell
 git clone --branch v0.1.0 https://github.com/Fd3os/pathdoc; cd pathdoc

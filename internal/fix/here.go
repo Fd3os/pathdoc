@@ -89,8 +89,10 @@ func ensureDir(path string, st *State) error {
 			return err
 		}
 	}
-	if err := os.Mkdir(path, 0o755); err != nil {
-		return err
+	// Private: only this user, SYSTEM and Administrators — it may become
+	// TEMP or a Gradle home, which other accounts must not write into.
+	if err := win.MakePrivateDir(path); err != nil {
+		return fmt.Errorf("cannot create %s (%v); choose another folder with --root", path, err)
 	}
 	st.Changes = append(st.Changes, Change{Kind: "dir", Path: path, At: time.Now().UTC()})
 	return nil

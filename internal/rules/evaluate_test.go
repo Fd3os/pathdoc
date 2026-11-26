@@ -225,3 +225,16 @@ func TestAndroidProjectPath(t *testing.T) {
 		t.Error("ASCII project: want silence")
 	}
 }
+
+// Flutter builds with Android Studio's bundled JDK, often with no JAVA_HOME
+// and no java on PATH: the Gradle rules must still fire.
+func TestGradleRulesWithFlutterAndNoJava(t *testing.T) {
+	home := map[string]facts.Location{"gradle-home": {Path: `C:\Users\محمد\.gradle`, Default: true}}
+	if !has(fired(machine(map[string]string{"flutter": "3.47.1"}, home)), "gradle-user-home") {
+		t.Error("Flutter, no Java on PATH, Arabic home: want gradle-user-home")
+	}
+	proj := map[string]facts.Location{"project": {Path: `C:\work\ابوي\app`}}
+	if !has(fired(machine(map[string]string{"flutter": "3.47.1"}, proj, "pubspec.yaml", "android/settings.gradle.kts")), "gradle-project-path") {
+		t.Error("Flutter, no Java on PATH, Arabic Android project: want gradle-project-path")
+	}
+}
