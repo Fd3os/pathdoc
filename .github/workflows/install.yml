@@ -3,9 +3,12 @@ name: install
 # The README's one-liner, run for real on a clean Windows runner in Windows
 # PowerShell 5.1 (what most people have) and in PowerShell 7, after every
 # release and on demand.
+# A release made by release.yml's own token raises no "release" event for
+# other workflows, so this follows the release workflow instead.
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [release]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -13,6 +16,7 @@ permissions:
 
 jobs:
   install:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: windows-latest
     strategy:
       fail-fast: false
