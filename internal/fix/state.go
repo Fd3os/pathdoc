@@ -8,15 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/Fd3os/pathdoc/internal/win"
 )
 
-// Value is a raw registry value: Data is never expanded, Expand says it was
-// REG_EXPAND_SZ, Exists false means there was no value at all.
-type Value struct {
-	Exists bool   `json:"exists"`
-	Data   string `json:"data,omitempty"`
-	Expand bool   `json:"expand,omitempty"`
-}
+// Value is a raw registry value (see win.EnvValue).
+type Value = win.EnvValue
 
 // Change is one thing pathdoc did. Kind is "env", "dir" or "junction".
 type Change struct {

@@ -121,3 +121,76 @@ func TestHereCommand(t *testing.T) {
 		t.Errorf("bad root: exit %d, %q", code, errOut)
 	}
 }
+
+type memStore struct{ vals map[string]fix.Value }
+
+func (m *memStore) Get(n string) (fix.Value, error) { return m.vals[n], nil }
+func (m *memStore) Set(n string, v fix.Value) error { m.vals[n] = v; return nil }
+func (m *memStore) Delete(n string) error           { delete(m.vals, n); return nil }
+func (m *memStore) Broadcast()                      {}
+
+func fixRun(sys *factstest.Fake, store *memStore, stdin string, interactive bool, args ...string) (int, string, string) {
+	var o, e bytes.Buffer
+	code := Run(args, Env{Sys: sys, Store: store, Stdin: strings.NewReader(stdin), Interactive: interactive, Stdout: &o, Stderr: &e})
+	return code, o.String(), e.String()
+}
+
+func TestFixAsksAppliesAndUndoPutsBack(t *testing.T) {
+	base := t.TempDir()
+	root := filepath.Join(base, "dev")
+	sys := dartWithJoseTemp()
+	sys.Env["LOCALAPPDATA"] = filepath.Join(base, "local")
+	old := fix.Value{Exists: true, Data: `%USERPROFILE%\AppData\Local\Temp`, Expand: true}
+	store := &memStore{vals: map[string]fix.Value{"TEMP": old, "TMP": old}}
+
+	code, out, errOut := fixRun(sys, store, "y\n", true, "fix", "--root", root)
+	if code != 0 {
+		t.Fatalf("fix: exit %d\n%s%s", code, out, errOut)
+	}
+	for _, want := range []string{"TEMP", filepath.Join(root, "temp"), "Apply these changes? [y/N]", "new terminal"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("fix output lacks %q\n%s", want, out)
+		}
+	}
+	if store.vals["TEMP"].Data != filepath.Join(root, "temp") {
+		t.Fatalf("TEMP = %+v", store.vals["TEMP"])
+	}
+
+	code, out, errOut = fixRun(sys, store, "", false, "undo")
+	if code != 0 || store.vals["TEMP"] != old || store.vals["TMP"] != old {
+		t.Fatalf("undo: exit %d, TEMP %+v\n%s%s", code, store.vals["TEMP"], out, errOut)
+	}
+	if code, out, _ := fixRun(sys, store, "", false, "undo"); code != 0 || !strings.Contains(out, "nothing to undo") {
+		t.Fatalf("second undo: exit %d\n%s", code, out)
+	}
+}
+
+func TestFixDeclinedChangesNothing(t *testing.T) {
+	sys := dartWithJoseTemp()
+	sys.Env["LOCALAPPDATA"] = t.TempDir()
+	store := &memStore{vals: map[string]fix.Value{}}
+	if code, _, _ := fixRun(sys, store, "n\n", true, "fix", "--root", filepath.Join(t.TempDir(), "dev")); code != 1 || len(store.vals) != 0 {
+		t.Fatalf("declined: exit %d, store %+v", code, store.vals)
+	}
+}
+
+func TestFixRefusesAPipeWithoutYes(t *testing.T) {
+	sys := dartWithJoseTemp()
+	sys.Env["LOCALAPPDATA"] = t.TempDir()
+	store := &memStore{vals: map[string]fix.Value{}}
+	code, _, errOut := fixRun(sys, store, "y\n", false, "fix", "--root", filepath.Join(t.TempDir(), "dev"))
+	if code != 2 || !strings.Contains(errOut, "--yes") || len(store.vals) != 0 {
+		t.Fatalf("pipe without --yes: exit %d, %q, store %+v", code, errOut, store.vals)
+	}
+	if code, _, _ := fixRun(sys, store, "", false, "fix", "--yes", "--root", filepath.Join(t.TempDir(), "dev")); code != 0 || !store.vals["TEMP"].Exists {
+		t.Fatalf("--yes: exit %d, store %+v", code, store.vals)
+	}
+}
+
+func TestFixWithNothingToDo(t *testing.T) {
+	sys := factstest.New()
+	sys.Env["LOCALAPPDATA"] = t.TempDir()
+	if code, out, _ := fixRun(sys, &memStore{vals: map[string]fix.Value{}}, "", false, "fix"); code != 0 || !strings.Contains(out, "nothing for pathdoc fix") {
+		t.Fatalf("exit %d\n%s", code, out)
+	}
+}
