@@ -23,6 +23,7 @@ var Catalog = []Rule{
 		},
 		Symptom:  "Error: Could not find or load main class org.gradle.wrapper.GradleWrapperMain",
 		Breaks:   "gradlew, flutter build apk, flutter run on Android",
+		Advice:   "Gradle's own 9.x gradlew.bat says: Error: Unable to access jarfile ...gradle-wrapper.jar",
 		Fix:      FixHere,
 		Repro:    "repro/gradle_test.go",
 		Evidence: []string{jdkUnicodeBug, reproURL("repro/gradle_test.go")},

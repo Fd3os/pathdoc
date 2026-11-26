@@ -32,7 +32,6 @@ func TestCatalogComplete(t *testing.T) {
 
 // A rule without a repro test does not ship.
 func TestCatalogHasRepro(t *testing.T) {
-	t.Skip("repro tests arrive in Task 7")
 	for _, r := range Catalog {
 		b, err := os.ReadFile(filepath.Join("..", "..", filepath.FromSlash(r.Repro)))
 		if err != nil {

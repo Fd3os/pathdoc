@@ -1,0 +1,8 @@
+gradlew.bat and gradle/wrapper/gradle-wrapper.jar are the Gradle wrapper,
+Copyright 2015 the original author or authors, licensed under the Apache
+License 2.0 (https://www.apache.org/licenses/LICENSE-2.0).
+
+Taken from https://github.com/gradle/gradle at tag v9.3.1. The jar's SHA-256,
+b3a875ddc1f044746e1b1a55f645584505f4a10438c1afea9f15e92a7c42ec13, is the one
+Gradle publishes at
+https://services.gradle.org/distributions/gradle-9.3.1-wrapper.jar.sha256
