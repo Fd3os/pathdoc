@@ -111,3 +111,19 @@ func TestJSONRoundTripsWithArabicIntact(t *testing.T) {
 		t.Errorf("clean JSON should say findings: [] — got\n%s", b.String())
 	}
 }
+
+// Two folder names break the same rule in D:\مشاريع\متجر; the sentence must agree with that.
+func TestWhyAgreesWithHowManyNames(t *testing.T) {
+	r := sample()
+	r.Findings = []rules.Finding{
+		{Rule: rule("flutter-analyze"), Where: facts.Location{Key: "project", Label: "Project", Path: `D:\مشاريع\متجر`}, Offending: []string{"مشاريع", "متجر"}},
+		{Rule: rule("flutter-analyze"), Where: facts.Location{Key: "project", Label: "Project", Path: `C:\Users\محمد\app`}, Offending: []string{"محمد"}},
+	}
+	var b bytes.Buffer
+	Text(&b, r, false)
+	for _, want := range []string{`"مشاريع", "متجر" are not plain ASCII`, `"محمد" is not plain ASCII`} {
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("missing %q in:\n%s", want, b.String())
+		}
+	}
+}

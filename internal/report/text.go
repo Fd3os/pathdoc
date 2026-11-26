@@ -107,7 +107,11 @@ func why(f rules.Finding, cp uint32) string {
 	}
 	names := strings.Join(quoted, ", ")
 	if f.Rule.Trigger == rules.AnyNonASCII {
-		return names + " is not plain ASCII, and this tool breaks on any letter outside it"
+		verb := "is"
+		if len(quoted) > 1 {
+			verb = "are"
+		}
+		return names + " " + verb + " not plain ASCII, and this tool breaks on any letter outside it"
 	}
 	return fmt.Sprintf("%s can't be written in code page %d", names, cp)
 }
