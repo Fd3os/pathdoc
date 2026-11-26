@@ -25,8 +25,8 @@ func TestCatalogComplete(t *testing.T) {
 			t.Errorf("%s: env fix with no variables", r.ID)
 		}
 	}
-	if len(Catalog) != 6 {
-		t.Errorf("catalog has %d rules, want the 6 the lab reproduced", len(Catalog))
+	if len(Catalog) != 7 {
+		t.Errorf("catalog has %d rules, want the 7 the lab reproduced", len(Catalog))
 	}
 }
 
@@ -43,4 +43,18 @@ func TestCatalogHasRepro(t *testing.T) {
 			t.Errorf("%s: %s has no %s", r.ID, r.Repro, fn)
 		}
 	}
+}
+
+// build_runner users see their own message, not dart compile's; the note must
+// quote it so they recognise their error (lab, 2026-11-26: café and ابوي).
+func TestDartAOTOutputQuotesBuildRunner(t *testing.T) {
+	for _, r := range Catalog {
+		if r.ID == "dart-aot-output" {
+			if !strings.Contains(r.Breaks, "build_runner") || !strings.Contains(r.Advice, "Failed to compile build script") {
+				t.Fatalf("breaks %q, note %q", r.Breaks, r.Advice)
+			}
+			return
+		}
+	}
+	t.Fatal("no dart-aot-output rule")
 }

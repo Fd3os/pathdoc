@@ -201,3 +201,27 @@ func TestFindingCarriesWhereAndOffending(t *testing.T) {
 		t.Fatalf("findings = %+v", fs)
 	}
 }
+
+// android-project-path: the Android Gradle Plugin stops any build whose project
+// path has a non-ASCII letter on Windows, even one code page 1252 can write
+// (lab, 2026-11-26: flutter build apk in café, debug and release).
+func TestAndroidProjectPath(t *testing.T) {
+	latin := map[string]facts.Location{"project": {Path: `C:\Users\x\café\app`}}
+	for _, manifest := range []string{"android/app/src/main/AndroidManifest.xml", "app/src/main/AndroidManifest.xml"} {
+		for _, tool := range []string{"flutter", "java"} {
+			if !has(fired(machine(map[string]string{tool: "1"}, latin, manifest)), "android-project-path") {
+				t.Errorf("café project with %s and %s: want android-project-path", manifest, tool)
+			}
+		}
+	}
+	if has(fired(machine(map[string]string{"java": "17"}, latin, "gradlew.bat")), "android-project-path") {
+		t.Error("Gradle project with no Android manifest: want silence")
+	}
+	if has(fired(machine(nil, latin, "app/src/main/AndroidManifest.xml")), "android-project-path") {
+		t.Error("neither Java nor Flutter: want silence")
+	}
+	plain := map[string]facts.Location{"project": {Path: `C:\dev\app`}}
+	if has(fired(machine(map[string]string{"java": "17"}, plain, "app/src/main/AndroidManifest.xml")), "android-project-path") {
+		t.Error("ASCII project: want silence")
+	}
+}

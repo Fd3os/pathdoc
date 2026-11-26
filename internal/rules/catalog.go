@@ -29,6 +29,24 @@ var Catalog = []Rule{
 		Evidence: []string{jdkUnicodeBug, reproURL("repro/gradle_test.go")},
 	},
 	{
+		ID:        "android-project-path",
+		Title:     "Android builds refuse this project folder",
+		Locations: []string{"project"},
+		Trigger:   AnyNonASCII,
+		Applies: func(f *facts.Facts, _ facts.Location) bool {
+			// The Android Gradle Plugin checks the path itself, so a letter the
+			// code page can write (café) stops it as surely as one it can't.
+			return (installed(f, "java") || installed(f, "flutter")) &&
+				(f.Markers["android/app/src/main/AndroidManifest.xml"] || f.Markers["app/src/main/AndroidManifest.xml"])
+		},
+		Symptom:  "Your project path contains non-ASCII characters. This will most likely cause the build to fail on Windows.",
+		Breaks:   "flutter build apk, flutter run on Android, Android Studio builds",
+		Advice:   "this is the Android Gradle Plugin's own check: any letter outside ASCII stops it, even é",
+		Fix:      FixHere,
+		Repro:    "repro/android_test.go",
+		Evidence: []string{reproURL("repro/android_test.go")},
+	},
+	{
 		ID:        "gradle-user-home",
 		Title:     "Gradle can't start its daemon from this Gradle home",
 		Locations: []string{"gradle-home"},
@@ -69,6 +87,7 @@ var Catalog = []Rule{
 		},
 		Symptom:  "Unable to write file ... Bad state: Generating AOT snapshot failed!",
 		Breaks:   "dart compile aot-snapshot, dart run build_runner",
+		Advice:   "build_runner says: Unable to write file: ...build.dart.aot, then Failed to compile build script",
 		Fix:      FixHere,
 		Repro:    "repro/dart_test.go",
 		Evidence: []string{reproURL("repro/dart_test.go")},

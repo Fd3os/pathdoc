@@ -45,6 +45,7 @@ type Facts struct {
 var markerNames = []string{
 	"pubspec.yaml", "gradlew.bat", "android/gradlew.bat",
 	"android/settings.gradle", "android/settings.gradle.kts",
+	"android/app/src/main/AndroidManifest.xml", "app/src/main/AndroidManifest.xml",
 	"pyproject.toml", "requirements.txt", "setup.py", ".venv", "package.json",
 }
 

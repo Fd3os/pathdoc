@@ -63,6 +63,25 @@ jobs:
           cache: true
       - run: go test -tags repro ./repro/ -v -count=1 -timeout 30m -run "TestRepro_flutter_"
 
+  android:
+    # A real flutter build apk --debug in each folder: the Android Gradle
+    # Plugin's own path check, then the build from a junction.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - run: go test -tags repro ./repro/ -v -count=1 -timeout 60m -run "TestRepro_android_"
+
   python:
     runs-on: windows-latest
     strategy:

@@ -168,3 +168,18 @@ func TestRealGatherUnder2s(t *testing.T) {
 	}
 	t.Logf("tools %v, project %q, took %v", f.Tools, f.Project, time.Since(start))
 }
+
+// An Android project is known by its manifest, in Flutter's layout or Android's own.
+func TestGatherSeesAndroidManifests(t *testing.T) {
+	for manifest, key := range map[string]string{
+		`android\app\src\main\AndroidManifest.xml`: "android/app/src/main/AndroidManifest.xml",
+		`app\src\main\AndroidManifest.xml`:         "app/src/main/AndroidManifest.xml",
+	} {
+		s := factstest.New()
+		s.Cwd = `C:\src\café`
+		s.Files[`C:\src\café\`+manifest] = ""
+		if f := facts.Gather(s); f.Project != `C:\src\café` || !f.Markers[key] {
+			t.Errorf("%s: Project %q, Markers %v", manifest, f.Project, f.Markers)
+		}
+	}
+}
