@@ -1,0 +1,46 @@
+name: release
+
+# A tag v* builds both exes the reproducible way (same Go as go.mod,
+# -trimpath, empty build id), writes SHA256SUMS.txt, and publishes a release.
+# Rebuild locally with the same command and the hashes match.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - name: build
+        shell: pwsh
+        env:
+          CGO_ENABLED: "0"
+          GOOS: windows
+          TAG: ${{ github.ref_name }}
+        run: |
+          New-Item -ItemType Directory dist | Out-Null
+          foreach ($arch in "amd64", "arm64") {
+            $env:GOARCH = $arch
+            go build -trimpath -ldflags "-s -w -buildid= -X github.com/Fd3os/pathdoc/internal/cli.Version=$env:TAG" -o "dist/pathdoc-windows-$arch.exe" ./cmd/pathdoc
+            if ($LASTEXITCODE) { exit 1 }
+          }
+          Push-Location dist
+          Get-ChildItem *.exe | Sort-Object Name | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          } | Out-File -Encoding ascii SHA256SUMS.txt
+          Get-Content SHA256SUMS.txt
+          Pop-Location
+      - name: publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create $env:TAG (Get-ChildItem dist/*).FullName --title "pathdoc $env:TAG" --generate-notes
