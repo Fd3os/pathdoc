@@ -65,8 +65,12 @@ func TestRepro_node_gyp(t *testing.T) {
 		dir := filepath.Join(base, f.name, "addon")
 		write(t, filepath.Join(dir, "binding.gyp"), `{"targets":[{"target_name":"hello","sources":["hello.c"]}]}`)
 		write(t, filepath.Join(dir, "hello.c"), "#include <node_api.h>\nstatic napi_value Init(napi_env env, napi_value exports) { return exports; }\nNAPI_MODULE(NODE_GYP_MODULE_NAME, Init)\n")
-		r := run(t, dir, nil, npx, "--yes", "node-gyp@11", "rebuild")
+		// node-gyp 13: 11 cannot find the Visual Studio on today's runners.
+		r := run(t, dir, nil, npx, "--yes", "node-gyp@13", "rebuild")
 		t.Logf("%s: node-gyp exit %d\n%s", f.name, r.code, tail(r.out))
+		if f.key == "plain" && r.code != 0 {
+			t.Fatalf("node-gyp fails even in a plain folder: the setup is broken, not a path finding\n%s", tail(r.out))
+		}
 		pass(t, f.name+": node-gyp rebuild", r, "ok")
 	}
 }
