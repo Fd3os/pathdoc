@@ -3,7 +3,11 @@
 // against it.
 package rules
 
-import "github.com/Fd3os/pathdoc/internal/facts"
+import (
+	"path/filepath"
+
+	"github.com/Fd3os/pathdoc/internal/facts"
+)
 
 // Trigger says which characters break a tool.
 type Trigger int
@@ -59,4 +63,12 @@ type Finding struct {
 	Rule      Rule
 	Where     facts.Location
 	Offending []string
+}
+
+// Under gives the value this variable gets when pathdoc's root is root.
+func (e EnvSet) Under(root string) string {
+	if e.Value != "" {
+		return e.Value
+	}
+	return filepath.Join(root, e.Sub)
 }

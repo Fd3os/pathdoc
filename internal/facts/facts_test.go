@@ -1,52 +1,54 @@
-package facts
+package facts_test
 
 import (
+	"github.com/Fd3os/pathdoc/internal/facts"
+	"github.com/Fd3os/pathdoc/internal/facts/factstest"
 	"testing"
 	"time"
 )
 
 func TestGatherDefaultsGradleHome(t *testing.T) {
-	s := newFake()
-	s.env["USERPROFILE"] = `C:\Users\محمد`
-	got := Gather(s).Locations["gradle-home"]
-	want := Location{Key: "gradle-home", Label: "Gradle home", Path: `C:\Users\محمد\.gradle`, EnvVar: "GRADLE_USER_HOME", Default: true}
+	s := factstest.New()
+	s.Env["USERPROFILE"] = `C:\Users\محمد`
+	got := facts.Gather(s).Locations["gradle-home"]
+	want := facts.Location{Key: "gradle-home", Label: "Gradle home", Path: `C:\Users\محمد\.gradle`, EnvVar: "GRADLE_USER_HOME", Default: true}
 	if got != want {
 		t.Fatalf("gradle-home = %+v, want %+v", got, want)
 	}
-	s.env["GRADLE_USER_HOME"] = `D:\g`
-	if got := Gather(s).Locations["gradle-home"]; got.Path != `D:\g` || got.Default || got.Exists {
+	s.Env["GRADLE_USER_HOME"] = `D:\g`
+	if got := facts.Gather(s).Locations["gradle-home"]; got.Path != `D:\g` || got.Default || got.Exists {
 		t.Fatalf("set GRADLE_USER_HOME: got %+v", got)
 	}
-	s.dirs[`D:\g`] = true
-	if got := Gather(s).Locations["gradle-home"]; !got.Exists {
+	s.Dirs[`D:\g`] = true
+	if got := facts.Gather(s).Locations["gradle-home"]; !got.Exists {
 		t.Fatalf("existing Gradle home: got %+v", got)
 	}
 }
 
 func TestGatherTemp(t *testing.T) {
-	s := newFake()
-	s.env["TMP"] = `C:\t2`
-	if got := Gather(s).Locations["temp"]; got.Path != `C:\t2` || got.EnvVar != "TMP" {
+	s := factstest.New()
+	s.Env["TMP"] = `C:\t2`
+	if got := facts.Gather(s).Locations["temp"]; got.Path != `C:\t2` || got.EnvVar != "TMP" {
 		t.Fatalf("TMP only: got %+v", got)
 	}
-	s.env["TEMP"] = `C:\Users\محمد\AppData\Local\Temp`
-	got := Gather(s).Locations["temp"]
+	s.Env["TEMP"] = `C:\Users\محمد\AppData\Local\Temp`
+	got := facts.Gather(s).Locations["temp"]
 	if got.Path != `C:\Users\محمد\AppData\Local\Temp` || got.EnvVar != "TEMP" || got.Label != "Temp folder" {
 		t.Fatalf("TEMP: got %+v", got)
 	}
-	if _, ok := Gather(newFake()).Locations["temp"]; ok {
+	if _, ok := facts.Gather(factstest.New()).Locations["temp"]; ok {
 		t.Fatal("no TEMP or TMP: want no temp location")
 	}
 }
 
 func TestGatherSkipsPythonStub(t *testing.T) {
-	s := newFake()
+	s := factstest.New()
 	stub := `C:\Users\محمد\AppData\Local\Microsoft\WindowsApps`
-	s.env["PATH"] = stub + `;"C:\Python312"`
-	s.files[stub+`\python.exe`] = ""
-	s.files[`C:\Python312\python.exe`] = ""
-	s.vers[`C:\Python312\python.exe`] = "3.12.3150.1013"
-	f := Gather(s)
+	s.Env["PATH"] = stub + `;"C:\Python312"`
+	s.Files[stub+`\python.exe`] = ""
+	s.Files[`C:\Python312\python.exe`] = ""
+	s.Vers[`C:\Python312\python.exe`] = "3.12.3150.1013"
+	f := facts.Gather(s)
 	if py := f.Tools["python"]; py.Path != `C:\Python312\python.exe` || py.Version != "3.12" {
 		t.Fatalf("python = %+v", py)
 	}
@@ -54,41 +56,41 @@ func TestGatherSkipsPythonStub(t *testing.T) {
 		t.Fatalf("python location = %+v", loc)
 	}
 
-	only := newFake()
-	only.env["PATH"] = stub
-	only.files[stub+`\python.exe`] = ""
-	if py, ok := Gather(only).Tools["python"]; ok {
+	only := factstest.New()
+	only.Env["PATH"] = stub
+	only.Files[stub+`\python.exe`] = ""
+	if py, ok := facts.Gather(only).Tools["python"]; ok {
 		t.Fatalf("only the Store stub: want no python, got %+v", py)
 	}
 }
 
 func TestGatherJava(t *testing.T) {
-	s := newFake()
+	s := factstest.New()
 	javapath := `C:\Program Files (x86)\Common Files\Oracle\Java\java8path`
-	s.env["PATH"] = javapath
-	s.files[javapath+`\java.exe`] = ""
-	s.vers[javapath+`\java.exe`] = "8.0.5010.8"
-	if j := Gather(s).Tools["java"]; j.Path != javapath+`\java.exe` || j.Version != "8.0.5010" {
+	s.Env["PATH"] = javapath
+	s.Files[javapath+`\java.exe`] = ""
+	s.Vers[javapath+`\java.exe`] = "8.0.5010.8"
+	if j := facts.Gather(s).Tools["java"]; j.Path != javapath+`\java.exe` || j.Version != "8.0.5010" {
 		t.Fatalf("java from PATH = %+v", j)
 	}
 	home := `C:\jdk-17`
-	s.env["JAVA_HOME"] = home
-	s.files[home+`\bin\java.exe`] = ""
-	s.files[home+`\release`] = "IMPLEMENTOR=\"x\"\nJAVA_VERSION=\"17.0.20\"\n"
-	if j := Gather(s).Tools["java"]; j.Path != home+`\bin\java.exe` || j.Version != "17.0.20" {
+	s.Env["JAVA_HOME"] = home
+	s.Files[home+`\bin\java.exe`] = ""
+	s.Files[home+`\release`] = "IMPLEMENTOR=\"x\"\nJAVA_VERSION=\"17.0.20\"\n"
+	if j := facts.Gather(s).Tools["java"]; j.Path != home+`\bin\java.exe` || j.Version != "17.0.20" {
 		t.Fatalf("java from JAVA_HOME = %+v", j)
 	}
 }
 
 func TestGatherFlutterAndDart(t *testing.T) {
-	s := newFake()
-	s.env["PATH"] = `C:\flutter\bin`
-	s.env["PATHEXT"] = ".COM;.EXE;.BAT;.CMD"
-	s.files[`C:\flutter\bin\flutter.bat`] = ""
-	s.files[`C:\flutter\bin\dart.bat`] = ""
-	s.files[`C:\flutter\bin\cache\flutter.version.json`] = `{"frameworkVersion": "3.47.1", "channel": "stable"}`
-	s.files[`C:\flutter\bin\cache\dart-sdk\version`] = "3.13.1\n"
-	f := Gather(s)
+	s := factstest.New()
+	s.Env["PATH"] = `C:\flutter\bin`
+	s.Env["PATHEXT"] = ".COM;.EXE;.BAT;.CMD"
+	s.Files[`C:\flutter\bin\flutter.bat`] = ""
+	s.Files[`C:\flutter\bin\dart.bat`] = ""
+	s.Files[`C:\flutter\bin\cache\flutter.version.json`] = `{"frameworkVersion": "3.47.1", "channel": "stable"}`
+	s.Files[`C:\flutter\bin\cache\dart-sdk\version`] = "3.13.1\n"
+	f := facts.Gather(s)
 	if fl := f.Tools["flutter"]; fl.Path != `C:\flutter\bin\flutter.bat` || fl.Version != "3.47.1" {
 		t.Fatalf("flutter = %+v", fl)
 	}
@@ -96,29 +98,29 @@ func TestGatherFlutterAndDart(t *testing.T) {
 		t.Fatalf("dart in flutter = %+v", d)
 	}
 
-	old := newFake()
-	old.env["PATH"] = `C:\flutter\bin`
-	old.files[`C:\flutter\bin\flutter.bat`] = ""
-	old.files[`C:\flutter\version`] = "3.22.0\n"
-	if fl := Gather(old).Tools["flutter"]; fl.Version != "3.22.0" {
+	old := factstest.New()
+	old.Env["PATH"] = `C:\flutter\bin`
+	old.Files[`C:\flutter\bin\flutter.bat`] = ""
+	old.Files[`C:\flutter\version`] = "3.22.0\n"
+	if fl := facts.Gather(old).Tools["flutter"]; fl.Version != "3.22.0" {
 		t.Fatalf("flutter from version file = %+v", fl)
 	}
 
-	alone := newFake()
-	alone.env["PATH"] = `C:\tools\dart-sdk\bin`
-	alone.files[`C:\tools\dart-sdk\bin\dart.exe`] = ""
-	alone.files[`C:\tools\dart-sdk\version`] = "3.9.0"
-	if d := Gather(alone).Tools["dart"]; d.Path != `C:\tools\dart-sdk\bin\dart.exe` || d.Version != "3.9.0" {
+	alone := factstest.New()
+	alone.Env["PATH"] = `C:\tools\dart-sdk\bin`
+	alone.Files[`C:\tools\dart-sdk\bin\dart.exe`] = ""
+	alone.Files[`C:\tools\dart-sdk\version`] = "3.9.0"
+	if d := facts.Gather(alone).Tools["dart"]; d.Path != `C:\tools\dart-sdk\bin\dart.exe` || d.Version != "3.9.0" {
 		t.Fatalf("standalone dart = %+v", d)
 	}
 }
 
 func TestGatherProjectWalksUp(t *testing.T) {
-	s := newFake()
-	s.cwd = `C:\Users\محمد\app\lib`
-	s.files[`C:\Users\محمد\app\pubspec.yaml`] = ""
-	s.files[`C:\Users\محمد\app\android\gradlew.bat`] = ""
-	f := Gather(s)
+	s := factstest.New()
+	s.Cwd = `C:\Users\محمد\app\lib`
+	s.Files[`C:\Users\محمد\app\pubspec.yaml`] = ""
+	s.Files[`C:\Users\محمد\app\android\gradlew.bat`] = ""
+	f := facts.Gather(s)
 	if f.Project != `C:\Users\محمد\app` {
 		t.Fatalf("Project = %q", f.Project)
 	}
@@ -129,9 +131,16 @@ func TestGatherProjectWalksUp(t *testing.T) {
 		t.Fatalf("project location = %+v", loc)
 	}
 
-	none := newFake()
-	none.cwd = `C:\Users\محمد\Desktop`
-	nf := Gather(none)
+	clone := factstest.New()
+	clone.Cwd = `C:\src\app`
+	clone.Files[`C:\src\app\android\settings.gradle.kts`] = ""
+	if cf := facts.Gather(clone); cf.Project != `C:\src\app` || !cf.Markers["android/settings.gradle.kts"] {
+		t.Fatalf("Android settings marker: Project %q, Markers %v", cf.Project, cf.Markers)
+	}
+
+	none := factstest.New()
+	none.Cwd = `C:\Users\محمد\Desktop`
+	nf := facts.Gather(none)
 	if nf.Project != "" {
 		t.Fatalf("no markers: Project = %q", nf.Project)
 	}
@@ -141,8 +150,8 @@ func TestGatherProjectWalksUp(t *testing.T) {
 }
 
 func TestGatherBindsCodePage(t *testing.T) {
-	s := newFake()
-	f := Gather(s)
+	s := factstest.New()
+	f := facts.Gather(s)
 	if f.CodePage != 1252 || f.Represents("ابوي") || !f.Represents("café") {
 		t.Fatalf("CodePage=%d Represents(ابوي)=%v", f.CodePage, f.Represents("ابوي"))
 	}
@@ -153,7 +162,7 @@ func TestRealGatherUnder2s(t *testing.T) {
 		t.Skip("real machine")
 	}
 	start := time.Now()
-	f := Gather(Real())
+	f := facts.Gather(facts.Real())
 	if d := time.Since(start); d > 2*time.Second {
 		t.Fatalf("Gather took %v", d)
 	}

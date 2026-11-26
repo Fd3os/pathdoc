@@ -16,7 +16,10 @@ var Catalog = []Rule{
 		Locations: []string{"project"},
 		Trigger:   NotInCodePage,
 		Applies: func(f *facts.Facts, _ facts.Location) bool {
-			return installed(f, "java") && (f.Markers["gradlew.bat"] || f.Markers["android/gradlew.bat"])
+			// Flutter keeps android\gradlew.bat out of git and writes it on the
+			// first Android build, so the Android settings file counts too.
+			return installed(f, "java") && (f.Markers["gradlew.bat"] || f.Markers["android/gradlew.bat"] ||
+				f.Markers["android/settings.gradle"] || f.Markers["android/settings.gradle.kts"])
 		},
 		Symptom:  "Error: Could not find or load main class org.gradle.wrapper.GradleWrapperMain",
 		Breaks:   "gradlew, flutter build apk, flutter run on Android",

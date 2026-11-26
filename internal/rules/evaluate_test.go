@@ -96,6 +96,13 @@ func TestGradleProjectPath(t *testing.T) {
 	if has(fired(machine(map[string]string{"java": "17"}, proj, "pubspec.yaml")), "gradle-project-path") {
 		t.Error("no Gradle wrapper: want silence")
 	}
+	// A Flutter project ignores gradlew.bat in git; Flutter writes it on the
+	// first Android build — the build that then fails.
+	for _, settings := range []string{"android/settings.gradle.kts", "android/settings.gradle"} {
+		if !has(fired(machine(map[string]string{"java": "17"}, proj, "pubspec.yaml", settings)), "gradle-project-path") {
+			t.Errorf("fresh Flutter clone with %s: want gradle-project-path", settings)
+		}
+	}
 }
 
 func TestGradleUserHome(t *testing.T) {

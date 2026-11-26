@@ -44,6 +44,7 @@ type Facts struct {
 // markerNames, with forward slashes; a folder holding any of them is a project.
 var markerNames = []string{
 	"pubspec.yaml", "gradlew.bat", "android/gradlew.bat",
+	"android/settings.gradle", "android/settings.gradle.kts",
 	"pyproject.toml", "requirements.txt", "setup.py", ".venv", "package.json",
 }
 
